@@ -1,0 +1,57 @@
+From 35fa4dfd090fe81690664e05fe0134896205d8ca Mon Sep 17 00:00:00 2001
+From: Frederik Carlier <frederik.carlier@keysight.com>
+Date: Wed, 4 Oct 2023 14:14:56 +0200
+Subject: [PATCH] Prefer system-provided robin-map
+
+---
+ CMakeLists.txt | 20 +++++++++++++-------
+ arc.mm         |  2 +-
+ 2 files changed, 14 insertions(+), 8 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e2746e9..3be0c7f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -86,13 +86,19 @@ else ()
+ 	list(APPEND libobjc_C_SRCS eh_personality.c)
+ endif (WIN32)
+ 
+-if (NOT EXISTS "${CMAKE_SOURCE_DIR}/third_party/robin-map/include/tsl/robin_map.h")
+-	message(FATAL_ERROR "Git submodules not present, please run:\n\n"
+-						" $ git submodule init && git submodule update\n\n"
+-						"If you did not checkout via git, you will need to"
+-						"fetch the submodule's contents from"
+-						"https://github.com/Tessil/robin-map/")
+-endif ()
++find_path(ROBIN_MAP_HEADER NAMES "tsl/robin_map.h")
++
++if (NOT ROBIN_MAP_HEADER)
++	if (NOT EXISTS "${CMAKE_SOURCE_DIR}/third_party/robin-map/include/tsl/robin_map.h")
++		message(FATAL_ERROR "Git submodules not present, please run:\n\n"
++							" $ git submodule init && git submodule update\n\n"
++							"If you did not checkout via git, you will need to"
++							"fetch the submodule's contents from"
++							"https://github.com/Tessil/robin-map/")
++	endif ()
++
++	include_directories("${CMAKE_SOURCE_DIR}/third_party/robin-map")
++endif()
+ 
+ # For release builds, we disable spamming the terminal with warnings about
+ # selector type mismatches
+diff --git a/arc.mm b/arc.mm
+index c96681f..4440667 100644
+--- a/arc.mm
++++ b/arc.mm
+@@ -3,7 +3,7 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <assert.h>
+-#include "third_party/robin-map/include/tsl/robin_map.h"
++#include "tsl/robin_map.h"
+ #import "lock.h"
+ #import "objc/runtime.h"
+ #import "objc/blocks_runtime.h"
+-- 
+2.42.0.windows.2
+
